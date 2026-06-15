@@ -63,8 +63,7 @@ Execute o seguinte comando na raiz do projeto:
 2. O ícone 🔵 surgirá na sua bandeja do sistema (perto do relógio do Windows).
 3. **Clique com o botão direito** no ícone para acessar o menu:
    - **Selecionar Interface**: Escolha o seu adaptador de rede (ex: Wi-Fi ou Ethernet).
-   - **Ativar [Perfil DNS]**: Define os endereços IPv4 da interface para o perfil selecionado. Um clique esquerdo normal no ícone ativa o perfil Padrão (ex: Google).
-   - **Restaurar Padrão (DHCP)**: Remove os DNS manuais e volta para Automático via DHCP.
+   - **Selecionar DNS**: Submenu para escolher o perfil de DNS que será aplicado. O perfil em uso ficará marcado.
    - **Gerenciar DNS...**: Abre a tela para você cadastrar seus servidores favoritos.
    - **Status da Rede...**: Mostra informações completas do console de rede do Windows.
 

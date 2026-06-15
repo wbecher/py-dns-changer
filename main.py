@@ -20,6 +20,7 @@ DEFAULT_PROFILES = {
 
 dns_profiles = {}
 selected_interface = ""
+active_dns_profile = ""
 icon_instance = None
 root_window = None
 
@@ -60,7 +61,7 @@ def get_active_interfaces():
     return interfaces
 
 def set_dns(profile_name):
-    global selected_interface, dns_profiles
+    global selected_interface, dns_profiles, active_dns_profile
     if not selected_interface:
         print("Nenhuma interface selecionada.")
         return
@@ -71,6 +72,7 @@ def set_dns(profile_name):
         print(f"DNS restaurado para DHCP na interface: {selected_interface}")
         if icon_instance:
             icon_instance.notify(f"Restaurado para DHCP", title="DNS Alterado")
+        active_dns_profile = "dhcp"
     elif profile_name in dns_profiles:
         prof = dns_profiles[profile_name]
         cmd_primary = f'netsh interface ipv4 set dns name="{selected_interface}" static {prof["primary"]} primary'
@@ -83,6 +85,7 @@ def set_dns(profile_name):
         print(f"DNS alterado para {profile_name} na interface: {selected_interface}")
         if icon_instance:
             icon_instance.notify(f"DNS alterado para {profile_name}", title="DNS Alterado")
+        active_dns_profile = profile_name
 
 def select_interface_action(interface_name):
     global selected_interface
@@ -104,6 +107,11 @@ def make_dns_action(profile_name):
         set_dns(profile_name)
     return action
 
+def make_dns_checked(profile_name):
+    def is_checked(item):
+        return active_dns_profile == profile_name
+    return is_checked
+
 def get_menu_items():
     global selected_interface
     interfaces = get_active_interfaces()
@@ -119,26 +127,25 @@ def get_menu_items():
     
     dns_menu_items = []
     for profile_name in dns_profiles.keys():
-        # Vamos definir o Google como a acao padrao por clique duplo/simples se existir, ou o primeiro
-        is_default = (profile_name == "Google")
         dns_menu_items.append(
-            MenuItem(f"Ativar {profile_name}", make_dns_action(profile_name), default=is_default)
+            MenuItem(profile_name, make_dns_action(profile_name), checked=make_dns_checked(profile_name), radio=True)
         )
+    
+    dns_menu_items.append(Menu.SEPARATOR)
+    dns_menu_items.append(
+        MenuItem('Automático (DHCP)', make_dns_action("dhcp"), checked=make_dns_checked("dhcp"), radio=True)
+    )
 
     menu_items = [
         MenuItem(lambda item: f'Interface Atual: {selected_interface}', lambda: None, enabled=False),
         MenuItem('Selecionar Interface', Menu(lambda: interface_menu_items)),
-        Menu.SEPARATOR
-    ]
-    menu_items.extend(dns_menu_items)
-    menu_items.extend([
-        MenuItem('Restaurar Padrão (DHCP)', lambda icon, item: set_dns("dhcp")),
+        MenuItem('Selecionar DNS', Menu(lambda: dns_menu_items)),
         Menu.SEPARATOR,
         MenuItem('Gerenciar DNS...', lambda icon, item: open_dns_manager_safe()),
         MenuItem('Status da Rede...', lambda icon, item: open_status_window_safe()),
         Menu.SEPARATOR,
         MenuItem('Sair', on_exit)
-    ])
+    ]
     
     return menu_items
 
@@ -151,7 +158,7 @@ def create_image():
 def on_exit(icon, item):
     icon.stop()
     if root_window:
-        root_window.quit()
+        root_window.after(0, root_window.destroy)
 
 # -- GUI Code (Tkinter) --
 
