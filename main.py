@@ -5,6 +5,7 @@ import subprocess
 import psutil
 import json
 import threading
+import re
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from PIL import Image, ImageDraw
@@ -87,10 +88,43 @@ def set_dns(profile_name):
             icon_instance.notify(f"DNS alterado para {profile_name}", title="DNS Alterado")
         active_dns_profile = profile_name
 
+def detect_current_dns(interface_name):
+    cmd = f'netsh interface ipv4 show dns name="{interface_name}"'
+    try:
+        output_bytes = subprocess.check_output(cmd, shell=True)
+        output = output_bytes.decode('cp850', errors='ignore')
+    except Exception:
+        return "Desconhecido"
+    
+    # Busca por IPs do output
+    ips = re.findall(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', output)
+    
+    # Se disser DHCP e nao tiver IPs estaticos, eh dhcp
+    if "DHCP" in output.upper() and not "ESTATIC" in output.upper() and not "ESTÁTIC" in output.upper():
+        if not ips:
+            return "dhcp"
+    
+    if not ips:
+        return "dhcp"
+        
+    primary = ips[0]
+    secondary = ips[1] if len(ips) > 1 else ""
+    
+    for name, prof in dns_profiles.items():
+        if prof.get("primary") == primary:
+            if prof.get("secondary") and prof.get("secondary") != secondary:
+                continue
+            return name
+            
+    return "Desconhecido"
+
 def select_interface_action(interface_name):
-    global selected_interface
+    global selected_interface, active_dns_profile
     selected_interface = interface_name
+    active_dns_profile = detect_current_dns(selected_interface)
     print(f"Interface selecionada alterada para: {selected_interface}")
+    if icon_instance:
+        icon_instance.update_menu()
 
 def make_interface_action(iface):
     def action(icon, item):
@@ -113,11 +147,12 @@ def make_dns_checked(profile_name):
     return is_checked
 
 def get_menu_items():
-    global selected_interface
+    global selected_interface, active_dns_profile
     interfaces = get_active_interfaces()
     
     if not selected_interface and interfaces:
         selected_interface = interfaces[0]
+        active_dns_profile = detect_current_dns(selected_interface)
 
     interface_menu_items = []
     for iface in interfaces:
