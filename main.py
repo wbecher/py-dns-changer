@@ -136,8 +136,27 @@ def get_menu_items():
         MenuItem('Automático (DHCP)', make_dns_action("dhcp"), checked=make_dns_checked("dhcp"), radio=True)
     )
 
+    def get_dns_display_name():
+        if not active_dns_profile:
+            return "Desconhecido"
+        if active_dns_profile == "dhcp":
+            return "Automático (DHCP)"
+        
+        if active_dns_profile in dns_profiles:
+            prof = dns_profiles[active_dns_profile]
+            ips = []
+            if prof.get("primary"):
+                ips.append(prof["primary"])
+            if prof.get("secondary"):
+                ips.append(prof["secondary"])
+            if ips:
+                return f"{active_dns_profile} ({', '.join(ips)})"
+        
+        return active_dns_profile
+
     menu_items = [
         MenuItem(lambda item: f'Interface Atual: {selected_interface}', lambda: None, enabled=False),
+        MenuItem(lambda item: f'DNS Atual: {get_dns_display_name()}', lambda: None, enabled=False),
         MenuItem('Selecionar Interface', Menu(lambda: interface_menu_items)),
         MenuItem('Selecionar DNS', Menu(lambda: dns_menu_items)),
         Menu.SEPARATOR,
@@ -179,7 +198,7 @@ def center_window(win, width, height):
 def open_dns_manager():
     win = tk.Toplevel(root_window)
     win.title("Gerenciar DNS")
-    center_window(win, 450, 350)
+    center_window(win, 480, 420)
     win.grab_set()
 
     list_frame = tk.Frame(win)
@@ -209,16 +228,16 @@ def open_dns_manager():
     inputs_frame = tk.Frame(win)
     inputs_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    tk.Label(inputs_frame, text="Nome:").grid(row=0, column=0, sticky=tk.W)
-    entry_name = tk.Entry(inputs_frame, width=15)
+    ttk.Label(inputs_frame, text="Nome:").grid(row=0, column=0, sticky=tk.W)
+    entry_name = ttk.Entry(inputs_frame, width=15)
     entry_name.grid(row=0, column=1, padx=5, pady=5)
 
-    tk.Label(inputs_frame, text="Pri:").grid(row=0, column=2, sticky=tk.W)
-    entry_primary = tk.Entry(inputs_frame, width=15)
+    ttk.Label(inputs_frame, text="Pri:").grid(row=0, column=2, sticky=tk.W)
+    entry_primary = ttk.Entry(inputs_frame, width=15)
     entry_primary.grid(row=0, column=3, padx=5, pady=5)
 
-    tk.Label(inputs_frame, text="Sec:").grid(row=1, column=2, sticky=tk.W)
-    entry_secondary = tk.Entry(inputs_frame, width=15)
+    ttk.Label(inputs_frame, text="Sec:").grid(row=1, column=2, sticky=tk.W)
+    entry_secondary = ttk.Entry(inputs_frame, width=15)
     entry_secondary.grid(row=1, column=3, padx=5, pady=5)
 
     def add_profile():
@@ -252,10 +271,10 @@ def open_dns_manager():
                     icon_instance.update_menu()
 
     btn_frame = tk.Frame(win)
-    btn_frame.pack(fill=tk.X, padx=10, pady=10)
+    btn_frame.pack(fill=tk.X, padx=10, pady=15)
     
-    tk.Button(btn_frame, text="Adicionar / Editar", command=add_profile).pack(side=tk.LEFT, padx=5)
-    tk.Button(btn_frame, text="Remover Selecionado", command=remove_profile).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text="Adicionar / Editar", command=add_profile, width=22).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text="Remover Selecionado", command=remove_profile, width=22).pack(side=tk.LEFT, padx=5)
 
 def open_status_window():
     win = tk.Toplevel(root_window)
